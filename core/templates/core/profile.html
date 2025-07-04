@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profil - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Profil Başlığı -->
+    <div class="bg-gray-900 rounded-lg p-6 mb-8 shadow-lg border border-purple-500">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="w-24 h-24 rounded-full overflow-hidden bg-purple-600 flex items-center justify-center">
+                    {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}" alt="Avatar" class="w-full h-full object-cover">
+                    {% else %}
+                        <span class="text-4xl text-white">{{ user.username|first|upper }}</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold text-white">{{ user.username }}</h1>
+                    <p class="text-gray-400">Üyelik: {{ user.date_joined|date:"d.m.Y" }}</p>
+                    {% if user.profile.bio %}
+                        <p class="text-gray-400 mt-2">{{ user.profile.bio }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="flex space-x-3">
+                <a href="{% url 'core:edit_profile' %}" 
+                   class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors">
+                    Profili Düzenle
+                </a>
+                <a href="{% url 'logout' %}" 
+                   class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-colors">
+                    Çıkış Yap
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- İstatistikler -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-gray-900 rounded-lg p-6 shadow-lg border border-blue-500 hover:border-blue-400 transition-colors">
+            <div class="text-blue-400 text-4xl mb-2">{{ stats.video_count }}</div>
+            <div class="text-gray-400">Yüklenen Video</div>
+        </div>
+        <div class="bg-gray-900 rounded-lg p-6 shadow-lg border border-green-500 hover:border-green-400 transition-colors">
+            <div class="text-green-400 text-4xl mb-2">{{ stats.note_count }}</div>
+            <div class="text-gray-400">Alınan Not</div>
+        </div>
+        <div class="bg-gray-900 rounded-lg p-6 shadow-lg border border-pink-500 hover:border-pink-400 transition-colors">
+            <div class="text-pink-400 text-4xl mb-2">{{ stats.chat_count }}</div>
+            <div class="text-gray-400">Sohbet Mesajı</div>
+        </div>
+        <div class="bg-gray-900 rounded-lg p-6 shadow-lg border border-yellow-500 hover:border-yellow-400 transition-colors">
+            <div class="text-yellow-400 text-4xl mb-2">{{ stats.quiz_attempt_count }}</div>
+            <div class="text-gray-400">Test Denemesi</div>
+        </div>
+    </div>
+
+    <!-- Son Aktiviteler -->
+    <div class="bg-gray-900 rounded-lg p-6 shadow-lg border border-purple-500">
+        <h2 class="text-2xl font-bold text-white mb-4">Son Aktiviteler</h2>
+        <div class="space-y-4">
+            {% for video in user.video_set.all|slice:":5" %}
+            <div class="bg-gray-800 rounded p-4 hover:bg-gray-700 transition-colors">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-white font-medium">{{ video.title }}</h3>
+                        <p class="text-gray-400 text-sm">Yüklenme: {{ video.uploaded_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-sm
+                        {% if video.status == 'ready' %}bg-green-900 text-green-400
+                        {% elif video.status == 'processing' %}bg-yellow-900 text-yellow-400
+                        {% else %}bg-red-900 text-red-400{% endif %}">
+                        {{ video.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-gray-400 text-center py-4">Henüz video yüklenmemiş.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

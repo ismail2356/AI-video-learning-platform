@@ -1,0 +1,565 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ video.title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Video Player -->
+        <div class="lg:col-span-2">
+            <div class="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
+                <div class="aspect-w-16 aspect-h-9">
+                    <video id="videoPlayer" class="w-full h-full" controls>
+                        <source src="{{ video.file.url }}" type="video/mp4">
+                        Tarayıcınız video oynatmayı desteklemiyor.
+                    </video>
+                </div>
+            </div>
+
+            <!-- Video Info -->
+            <div class="mt-6 bg-gray-900 rounded-lg p-6 shadow-lg border border-purple-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">{{ video.title }}</h1>
+                        <p class="text-gray-400 text-sm mt-2">
+                            Yüklenme: {{ video.uploaded_at|date:"d.m.Y H:i" }}
+                        </p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <span class="px-3 py-1 rounded-full text-sm
+                            {% if video.status == 'ready' %}bg-green-900 text-green-400
+                            {% elif video.status == 'processing' %}bg-yellow-900 text-yellow-400
+                            {% else %}bg-red-900 text-red-400{% endif %}">
+                            {{ video.get_status_display }}
+                        </span>
+                        <form method="post" action="{% url 'videos:delete_video' video.id %}" 
+                              onsubmit="return confirm('{{ video.title }} videosunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')">
+                            {% csrf_token %}
+                            <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded-full text-sm hover:bg-red-500 transition-colors">
+                                <i class="fas fa-trash-alt mr-1"></i> Sil
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% if video.description %}
+                    <p class="text-gray-400 mt-4">{{ video.description }}</p>
+                {% endif %}
+                <div class="mt-4 pt-4 border-t border-gray-800">
+                    <div class="grid grid-cols-2 gap-4 text-sm text-gray-400">
+                        <div>
+                            <span class="font-medium">Süre:</span>
+                            {{ video.get_duration_display }}
+                        </div>
+                        {% if video.metadata %}
+                        <div>
+                            <span class="font-medium">FPS:</span>
+                            {{ video.metadata.fps|floatformat:1 }}
+                        </div>
+                        <div>
+                            <span class="font-medium">Boyut:</span>
+                            {{ video.metadata.size.0 }}x{{ video.metadata.size.1 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="lg:col-span-1">
+            <div x-data="{ activeTab: 'transcript' }" class="space-y-6">
+                <!-- Tab Buttons -->
+                <div class="flex space-x-2 bg-gray-800 p-1 rounded-lg">
+                    <button @click="activeTab = 'transcript'" 
+                            :class="{ 'bg-purple-600 text-white': activeTab === 'transcript',
+                                     'text-gray-400 hover:text-white': activeTab !== 'transcript' }"
+                            class="flex-1 px-4 py-2 rounded-md transition-colors">
+                        Transkript
+                    </button>
+                    <button @click="activeTab = 'notes'" 
+                            :class="{ 'bg-purple-600 text-white': activeTab === 'notes',
+                                     'text-gray-400 hover:text-white': activeTab !== 'notes' }"
+                            class="flex-1 px-4 py-2 rounded-md transition-colors">
+                        Notlar
+                    </button>
+                    <button @click="activeTab = 'chat'" 
+                            :class="{ 'bg-purple-600 text-white': activeTab === 'chat',
+                                     'text-gray-400 hover:text-white': activeTab !== 'chat' }"
+                            class="flex-1 px-4 py-2 rounded-md transition-colors">
+                        Sohbet
+                    </button>
+                    <button @click="activeTab = 'summary'" 
+                            :class="{ 'bg-purple-600 text-white': activeTab === 'summary',
+                                     'text-gray-400 hover:text-white': activeTab !== 'summary' }"
+                            class="flex-1 px-4 py-2 rounded-md transition-colors">
+                        Özet
+                    </button>
+                    <button @click="activeTab = 'flashcards'" 
+                            :class="{ 'bg-purple-600 text-white': activeTab === 'flashcards',
+                                     'text-gray-400 hover:text-white': activeTab !== 'flashcards' }"
+                            class="flex-1 px-4 py-2 rounded-md transition-colors">
+                        Flashcard
+                    </button>
+                    <button @click="activeTab = 'quiz'" 
+                            :class="{ 'bg-purple-600 text-white': activeTab === 'quiz',
+                                     'text-gray-400 hover:text-white': activeTab !== 'quiz' }"
+                            class="flex-1 px-4 py-2 rounded-md transition-colors">
+                        Quiz
+                    </button>
+                </div>
+
+                <!-- Transcript Tab -->
+                <div x-show="activeTab === 'transcript'" class="bg-gray-900 rounded-lg p-6 shadow-lg border border-purple-500">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-white">Transkript</h2>
+                        <form method="POST" action="{% url 'transcriptions:generate_transcript' video.id %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors">
+                                Transkript Oluştur
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div id="transcriptContainer" class="space-y-4 max-h-[600px] overflow-y-auto">
+                        {% for segment in segments %}
+                        <div class="p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
+                             data-start-time="{{ segment.start_time }}"
+                             onclick="seekTo({{ segment.start_time }})">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-purple-400 text-sm">{{ segment.get_time_display }}</span>
+                            </div>
+                            <p class="text-gray-300">{{ segment.text }}</p>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-8">
+                            <p class="text-gray-400">Henüz transkript oluşturulmamış.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Notes Tab -->
+                <div x-show="activeTab === 'notes'" class="bg-gray-900 rounded-lg p-6 shadow-lg border border-purple-500">
+                    <h2 class="text-xl font-bold text-white mb-4">Notlar</h2>
+                    <form id="noteForm" class="mb-6 flex flex-col space-y-2">
+                        <textarea id="noteText" name="note_text" rows="2" required
+                            class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                            placeholder="Notunuzu yazın..."></textarea>
+                        <input type="hidden" id="noteTimestamp" name="timestamp" value="0">
+                        <button type="submit" class="self-end px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors">
+                            Not Ekle
+                        </button>
+                    </form>
+                    <div id="notesList" class="space-y-4 max-h-[400px] overflow-y-auto">
+                        {% for note in notes %}
+                        <div class="p-3 bg-gray-800 rounded-lg">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-purple-400 text-xs">{{ note.timestamp|floatformat:2 }} sn</span>
+                                <span class="text-gray-500 text-xs">{{ note.created_at|date:"d.m.Y H:i" }}</span>
+                            </div>
+                            <div class="text-gray-300 text-sm">{{ note.note_text }}</div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-8">
+                            <p class="text-gray-400">Henüz not eklenmemiş.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Chat Tab -->
+                <div x-show="activeTab === 'chat'" class="bg-gray-900 rounded-lg p-6 shadow-lg border border-purple-500">
+                    <h2 class="text-xl font-bold text-white mb-4">Sohbet</h2>
+                    <form id="chatForm" class="mb-6 flex flex-col space-y-2">
+                        <textarea id="chatPrompt" name="prompt_text" rows="2" required
+                            class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                            placeholder="Sorunuzu veya mesajınızı yazın..."></textarea>
+                        <input type="hidden" id="chatTimestamp" name="timestamp" value="0">
+                        <button type="submit" class="self-end px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors">
+                            Gönder
+                        </button>
+                    </form>
+                    <div id="chatList" class="space-y-4 max-h-[400px] overflow-y-auto">
+                        {% for msg in chat_messages %}
+                        <div class="p-3 bg-gray-800 rounded-lg">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-purple-400 text-xs">{{ msg.user.username }}</span>
+                                <span class="text-gray-500 text-xs">{{ msg.created_at|date:"H:i" }}</span>
+                            </div>
+                            <div class="text-gray-300 text-sm">{{ msg.prompt_text }}</div>
+                            <div class="text-green-400 text-xs mt-1">{{ msg.response_text }}</div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-8">
+                            <p class="text-gray-400">Henüz mesaj yok.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Summary Tab -->
+                <div x-show="activeTab === 'summary'" class="bg-gray-900 rounded-lg p-6 shadow-lg border border-purple-500">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-white">Otomatik Özet</h2>
+                        <button id="generateSummaryBtn" type="button"
+                                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors">
+                            Özet Oluştur
+                        </button>
+                    </div>
+                    <div id="summaryResult">
+                        {% if summary %}
+                        <div class="mb-4">
+                            <h3 class="text-purple-400 font-semibold">Kısa Özet</h3>
+                            <p class="text-gray-300">{{ summary.short_summary_text }}</p>
+                        </div>
+                        <div>
+                            <h3 class="text-purple-400 font-semibold">Detaylı Özet</h3>
+                            <p class="text-gray-300">{{ summary.detailed_summary_text }}</p>
+                        </div>
+                        {% else %}
+                        <p class="text-gray-400">Henüz özet oluşturulmamış.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Flashcards Tab -->
+                <div x-show="activeTab === 'flashcards'" class="bg-gray-900 rounded-lg p-6 shadow-lg border border-purple-500">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-white">Otomatik Flashcard</h2>
+                        <button id="generateFlashcardsBtn" type="button"
+                                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors">
+                            Flashcard Oluştur
+                        </button>
+                    </div>
+                    <div id="flashcardsResult">
+                        {% if flashcards %}
+                        <ul class="space-y-4">
+                            {% for card in flashcards %}
+                            <li class="bg-gray-800 rounded-lg p-4">
+                                <div class="text-purple-400 font-semibold mb-2">Soru:</div>
+                                <div class="text-gray-300 mb-2">{{ card.question_text }}</div>
+                                <div class="text-green-400 font-semibold mb-1">Cevap:</div>
+                                <div class="text-gray-300">{{ card.answer_text }}</div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-gray-400">Henüz flashcard oluşturulmamış.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Quiz Tab -->
+                <div x-show="activeTab === 'quiz'" class="bg-gray-900 rounded-lg p-6 shadow-lg border border-purple-500">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-white">Video Testleri</h2>
+                        <button id="generateQuizBtn" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-500 transition-colors">
+                            <i class="fas fa-robot mr-2"></i> Yapay Zeka ile Test Oluştur
+                        </button>
+                    </div>
+                    
+                    <div id="quizContainer">
+                        {% if quizzes %}
+                        <div class="space-y-4">
+                            {% for quiz in quizzes %}
+                            <div class="bg-gray-800 rounded-lg p-5 border border-gray-700 hover:border-purple-500 transition-colors">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-white mb-2">{{ quiz.title }}</h3>
+                                        <p class="text-gray-400 text-sm mb-2">{{ quiz.questions.count }} soru</p>
+                                    </div>
+                                    <div>
+                                        <a href="{% url 'quizzes:take_quiz' quiz.id %}" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors inline-flex items-center">
+                                            <i class="fas fa-play mr-1"></i> Testi Başlat
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3 pt-3 border-t border-gray-700">
+                                    <div class="flex items-center text-sm text-gray-500">
+                                        <span class="mr-3">
+                                            <i class="fas fa-question-circle mr-1"></i> {{ quiz.questions.count }} soru
+                                        </span>
+                                        {% if quiz.attempts.count > 0 %}
+                                        <span>
+                                            <i class="fas fa-trophy mr-1"></i> En yüksek puan: {% with best_attempt=quiz.attempts.all|dictsort:"score"|last %}{{ best_attempt.score }}%{% endwith %}
+                                        </span>
+                                        {% else %}
+                                        <span>
+                                            <i class="fas fa-hourglass-start mr-1"></i> Henüz çözülmedi
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="bg-gray-800 rounded-lg p-6 text-center">
+                            <div class="text-gray-400 mb-4">
+                                <i class="fas fa-clipboard-list text-4xl mb-3"></i>
+                                <p>Bu video için henüz test oluşturulmamış.</p>
+                            </div>
+                            <button id="generateQuizBtnEmpty" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors inline-flex items-center">
+                                <i class="fas fa-robot mr-2"></i> Yapay Zeka ile Test Oluştur
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div id="quizLoadingIndicator" class="hidden text-center py-10">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500 mb-4"></div>
+                        <p class="text-purple-400">Test oluşturuluyor...</p>
+                        <p class="text-gray-400 text-sm mt-2">Bu işlem biraz zaman alabilir, lütfen bekleyin.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function seekTo(time) {
+    const video = document.getElementById('videoPlayer');
+    video.currentTime = time;
+    video.play();
+}
+
+// Video oynatıcı zamanı değiştiğinde ilgili transkript segmentini vurgula
+document.getElementById('videoPlayer').addEventListener('timeupdate', function() {
+    const currentTime = this.currentTime;
+    const segments = document.querySelectorAll('#transcriptContainer > div');
+    
+    segments.forEach(segment => {
+        const startTime = parseFloat(segment.dataset.startTime);
+        const endTime = parseFloat(segment.dataset.endTime);
+        
+        if (currentTime >= startTime && currentTime <= endTime) {
+            segment.classList.add('bg-gray-700');
+            segment.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            segment.classList.remove('bg-gray-700');
+        }
+    });
+});
+
+// Not ekleme AJAX
+const noteForm = document.getElementById('noteForm');
+const noteText = document.getElementById('noteText');
+const noteTimestamp = document.getElementById('noteTimestamp');
+const notesList = document.getElementById('notesList');
+
+if (noteForm) {
+    noteForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const text = noteText.value.trim();
+        const timestamp = noteTimestamp.value;
+        if (!text) return;
+        fetch("{% url 'notes:add_note_ajax' video.id %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `note_text=${encodeURIComponent(text)}&timestamp=${encodeURIComponent(timestamp)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Yeni notu en üste ekle
+            const noteDiv = document.createElement('div');
+            noteDiv.className = 'p-3 bg-gray-800 rounded-lg';
+            noteDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-purple-400 text-xs">${data.timestamp} sn</span>
+                    <span class="text-gray-500 text-xs">${data.created_at}</span>
+                </div>
+                <div class="text-gray-300 text-sm">${data.note_text}</div>
+            `;
+            notesList.prepend(noteDiv);
+            noteText.value = '';
+        });
+    });
+}
+// Video oynatıcıdan zaman alıp not ekleme alanına yazmak için:
+const videoPlayer = document.getElementById('videoPlayer');
+if (videoPlayer && noteTimestamp) {
+    videoPlayer.addEventListener('pause', function() {
+        noteTimestamp.value = videoPlayer.currentTime.toFixed(2);
+    });
+}
+
+// Chat ekleme AJAX
+const chatForm = document.getElementById('chatForm');
+const chatPrompt = document.getElementById('chatPrompt');
+const chatTimestamp = document.getElementById('chatTimestamp');
+const chatList = document.getElementById('chatList');
+
+if (chatForm) {
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const prompt = chatPrompt.value.trim();
+        const timestamp = chatTimestamp.value;
+        if (!prompt) return;
+        fetch("{% url 'chat:add_chat_message_ajax' video.id %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `prompt_text=${encodeURIComponent(prompt)}&timestamp=${encodeURIComponent(timestamp)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Yeni mesajı en üste ekle
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'p-3 bg-gray-800 rounded-lg';
+            msgDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-purple-400 text-xs">${data.user}</span>
+                    <span class="text-gray-500 text-xs">${data.created_at}</span>
+                </div>
+                <div class="text-gray-300 text-sm">${data.prompt_text}</div>
+                <div class="text-green-400 text-xs mt-1">${data.response_text}</div>
+            `;
+            chatList.prepend(msgDiv);
+            chatPrompt.value = '';
+        });
+    });
+}
+// Video oynatıcıdan zaman alıp chat formuna yazmak için:
+if (videoPlayer && chatTimestamp) {
+    videoPlayer.addEventListener('pause', function() {
+        chatTimestamp.value = videoPlayer.currentTime.toFixed(2);
+    });
+}
+
+// Özet oluşturma AJAX
+const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+const summaryResult = document.getElementById('summaryResult');
+if (generateSummaryBtn) {
+    generateSummaryBtn.addEventListener('click', function() {
+        summaryResult.innerHTML = '<div class="text-gray-400">Özet oluşturuluyor...</div>';
+        fetch("{% url 'summaries:generate_summary_ajax' video.id %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            summaryResult.innerHTML = `
+                <div class=\"mb-4\">
+                    <h3 class=\"text-purple-400 font-semibold\">Kısa Özet</h3>
+                    <p class=\"text-gray-300\">${data.short_summary}</p>
+                </div>
+                <div>
+                    <h3 class=\"text-purple-400 font-semibold\">Detaylı Özet</h3>
+                    <p class=\"text-gray-300\">${data.detailed_summary}</p>
+                </div>
+            `;
+        });
+    });
+}
+
+// Flashcard oluşturma AJAX
+const generateFlashcardsBtn = document.getElementById('generateFlashcardsBtn');
+const flashcardsResult = document.getElementById('flashcardsResult');
+if (generateFlashcardsBtn) {
+    generateFlashcardsBtn.addEventListener('click', function() {
+        flashcardsResult.innerHTML = '<div class="text-gray-400">Flashcard oluşturuluyor...</div>';
+        fetch("{% url 'flashcards:generate_flashcards_ajax' video.id %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.flashcards && data.flashcards.length > 0) {
+                let html = '<ul class="space-y-4">';
+                data.flashcards.forEach(card => {
+                    html += `<li class=\"bg-gray-800 rounded-lg p-4\">
+                        <div class=\"text-purple-400 font-semibold mb-2\">Soru:</div>
+                        <div class=\"text-gray-300 mb-2\">${card.question}</div>
+                        <div class=\"text-green-400 font-semibold mb-1\">Cevap:</div>
+                        <div class=\"text-gray-300\">${card.answer}</div>
+                    </li>`;
+                });
+                html += '</ul>';
+                flashcardsResult.innerHTML = html;
+            } else {
+                flashcardsResult.innerHTML = '<p class="text-gray-400">Flashcard oluşturulamadı.</p>';
+            }
+        });
+    });
+}
+
+// Quiz oluşturma AJAX
+const generateQuizBtn = document.getElementById('generateQuizBtn');
+const generateQuizBtnEmpty = document.getElementById('generateQuizBtnEmpty');
+const quizContainer = document.getElementById('quizContainer');
+const quizLoadingIndicator = document.getElementById('quizLoadingIndicator');
+
+// Ana quiz oluşturma butonu
+if (generateQuizBtn) {
+    generateQuizBtn.addEventListener('click', function() {
+        createQuiz();
+    });
+}
+
+// Boş ekranda quiz oluşturma butonu
+if (generateQuizBtnEmpty) {
+    generateQuizBtnEmpty.addEventListener('click', function() {
+        createQuiz();
+    });
+}
+
+// Quiz oluşturma fonksiyonu
+function createQuiz() {
+    quizLoadingIndicator.classList.remove('hidden');
+    quizContainer.classList.add('hidden');
+    
+    fetch("{% url 'quizzes:generate_quiz_ajax' video.id %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Test oluşturulduktan sonra doğrudan teste yönlendir
+            window.location.href = data.take_quiz_url;
+        } else {
+            quizContainer.innerHTML = `<div class="text-red-500 p-4 bg-red-900 bg-opacity-30 rounded-lg border border-red-500">
+                <p class="font-semibold mb-2">Hata oluştu</p>
+                <p>${data.error || 'Bilinmeyen bir hata oluştu.'}</p>
+            </div>`;
+            quizContainer.classList.remove('hidden');
+            quizLoadingIndicator.classList.add('hidden');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        quizContainer.innerHTML = `<div class="text-red-500 p-4 bg-red-900 bg-opacity-30 rounded-lg border border-red-500">
+            <p class="font-semibold mb-2">Hata oluştu</p>
+            <p>İstek sırasında bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
+        </div>`;
+        quizContainer.classList.remove('hidden');
+        quizLoadingIndicator.classList.add('hidden');
+    });
+}
+</script>
+{% endblock %}
+{% endblock %} 

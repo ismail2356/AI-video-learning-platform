@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Video İzleme{% endblock %}
+{% block content %}
+<div class="p-6 bg-gray-200 min-h-screen flex flex-col items-center justify-center">
+  <div class="border-4 border-neon-primary rounded-xl p-4 bg-gray-100 w-full max-w-7xl">
+    <div class="grid grid-cols-3 gap-4">
+      <!-- Sol: Video ve Transcript -->
+      <div class="col-span-2 flex flex-col">
+        <div class="bg-neon-bg text-white flex-1 flex items-center justify-center rounded-lg mb-2 min-h-[320px]">
+          video
+        </div>
+        <div class="flex justify-end mb-2">
+          <button class="bg-black text-white px-3 py-1 rounded">ekran gö</button>
+        </div>
+        <div class="bg-neon-bg text-white rounded-lg flex items-center justify-center min-h-[80px]">
+          Transcript
+        </div>
+      </div>
+      <!-- Sağ: Sekmeler, Sohbet, Not Alma -->
+      <div class="flex flex-col gap-2">
+        <div class="flex gap-2 mb-2">
+          <button class="bg-black text-white px-4 py-2 rounded">özet</button>
+          <button class="bg-black text-white px-4 py-2 rounded">bilgi kartları</button>
+          <button class="bg-black text-white px-4 py-2 rounded">testler</button>
+        </div>
+        <div class="bg-neon-bg text-white flex-1 flex items-center justify-center rounded-lg mb-2 min-h-[100px]">
+          sohbet
+        </div>
+        <div class="bg-neon-bg text-white flex-1 flex items-center justify-center rounded-lg min-h-[80px]">
+          not alma
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

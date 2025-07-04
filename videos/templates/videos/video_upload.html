@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Video Yükle{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-gray-900 rounded-lg p-6 shadow-lg border border-purple-500">
+            <h1 class="text-2xl font-bold text-white mb-6">Video Yükle</h1>
+            
+            <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Title -->
+                <div class="space-y-2">
+                    <label for="{{ form.title.id_for_label }}" class="block text-gray-400">
+                        Başlık
+                    </label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                    <p class="text-red-400 text-sm">{{ form.title.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Description -->
+                <div class="space-y-2">
+                    <label for="{{ form.description.id_for_label }}" class="block text-gray-400">
+                        Açıklama
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <p class="text-red-400 text-sm">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- File -->
+                <div class="space-y-2">
+                    <label for="{{ form.file.id_for_label }}" class="block text-gray-400">
+                        Video Dosyası
+                    </label>
+                    {{ form.file }}
+                    {% if form.file.errors %}
+                    <p class="text-red-400 text-sm">{{ form.file.errors.0 }}</p>
+                    {% endif %}
+                    <p class="text-sm text-gray-500">Desteklenen formatlar: MP4, AVI, MOV</p>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex justify-end space-x-4">
+                    <a href="{% url 'videos:video_list' %}" 
+                       class="px-4 py-2 bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-700 transition-colors">
+                        İptal
+                    </a>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors">
+                        Yükle
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

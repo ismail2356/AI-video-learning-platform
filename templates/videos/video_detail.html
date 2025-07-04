@@ -1,0 +1,572 @@
+{% extends 'base.html' %}
+{% block title %}{{ video.title }}{% endblock %}
+
+{% load markdownify %}
+
+{% block content %}
+<div class="min-h-screen bg-black py-8">
+  <div class="container mx-auto px-4">
+    <!-- Video Başlık Bilgisi -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-neon-primary mb-2">{{ video.title }}</h1>
+      <div class="flex justify-between items-center">
+        <div class="text-gray-400">
+          <span>{{ video.get_duration_display }}</span>
+          <span class="mx-2">•</span>
+          <span>{{ video.uploaded_at|date:"d.m.Y H:i" }}</span>
+        </div>
+        <span class="px-3 py-1 rounded-full text-sm
+          {% if video.status == 'transcribed' %}bg-green-900 text-green-400
+          {% elif video.status == 'ready' %}bg-blue-900 text-blue-400
+          {% elif video.status == 'processing' %}bg-yellow-900 text-yellow-400
+          {% else %}bg-red-900 text-red-400{% endif %}">
+          {{ video.get_status_display }}
+        </span>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Sol: Video ve Transcript -->
+      <div class="lg:col-span-2">
+        <!-- Video Player -->
+        <div class="bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-neon-primary hover:shadow-neon-primary transition-all duration-300">
+          <div class="aspect-w-16 aspect-h-9">
+            <video id="videoPlayer" src="{{ video.file.url }}" controls class="w-full h-full"></video>
+          </div>
+        </div>
+        
+        <!-- Video Açıklaması -->
+        {% if video.description %}
+        <div class="mt-4 bg-gray-900 rounded-xl p-4 border border-neon-secondary">
+          <h3 class="text-neon-secondary font-bold mb-2">Açıklama</h3>
+          <p class="text-gray-400">{{ video.description|markdownify }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- Transkript -->
+        <div class="mt-6">
+          <h3 class="text-neon-primary font-bold text-xl mb-4">Transkript</h3>
+          <div class="bg-gray-900 rounded-xl p-4 border border-neon-primary max-h-[400px] overflow-y-auto" id="transcriptBox">
+            {% for seg in segments %}
+              <div class="py-2 px-3 rounded mb-2 bg-gray-800 transition-all duration-200">
+                <span class="text-xs text-neon-secondary font-mono">{{ seg.start_time|floatformat:2 }} - {{ seg.end_time|floatformat:2 }}</span>
+                <span class="ml-2 text-gray-300">{{ seg.text|markdownify }}</span>
+              </div>
+            {% empty %}
+              <div class="text-gray-400 text-center py-8">Transkript henüz oluşturulmadı.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sağ: Sekmeler ve Paneller -->
+      <div class="lg:col-span-1" x-data="{ tab: 'ozet' }">
+        <!-- Sekme Butonları -->
+        <div class="flex mb-4 bg-gray-900 rounded-xl overflow-hidden">
+          <button 
+            @click="tab = 'ozet'" 
+            :class="tab === 'ozet' ? 'bg-neon-primary text-black' : 'bg-gray-900 text-gray-400 hover:text-white'" 
+            class="flex-1 py-3 px-4 transition-all duration-300 font-medium">
+            <i class="fas fa-file-alt mr-2"></i>Özet
+          </button>
+          <button 
+            @click="tab = 'flashcard'" 
+            :class="tab === 'flashcard' ? 'bg-neon-primary text-black' : 'bg-gray-900 text-gray-400 hover:text-white'" 
+            class="flex-1 py-3 px-4 transition-all duration-300 font-medium">
+            <i class="fas fa-clone mr-2"></i>Kartlar
+          </button>
+          <button 
+            @click="tab = 'quiz'" 
+            :class="tab === 'quiz' ? 'bg-neon-primary text-black' : 'bg-gray-900 text-gray-400 hover:text-white'" 
+            class="flex-1 py-3 px-4 transition-all duration-300 font-medium">
+            <i class="fas fa-question-circle mr-2"></i>Test
+          </button>
+        </div>
+        
+        <!-- Özet Sekmesi -->
+        <div x-show="tab === 'ozet'" class="bg-gray-900 rounded-xl p-4 border border-neon-primary mb-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-neon-primary font-bold">Otomatik Özet</h3>
+            <form method="post" action="{% url 'videos:generate_summary' video.id %}" id="summaryForm">
+              {% csrf_token %}
+              <button type="submit" class="bg-neon-primary text-black px-4 py-1 rounded-lg text-sm hover:shadow-neon transition-all duration-300">
+                <i class="fas fa-magic mr-1"></i> Özet Oluştur
+              </button>
+            </form>
+          </div>
+          
+          <div id="summaryBox" class="max-h-[400px] overflow-y-auto pr-2 scroll-smooth">
+            {% if summary %}
+              <div class="mb-2 bg-gray-800 rounded-lg p-4 border border-neon-primary">
+                <h4 class="text-neon-primary font-semibold mb-2">Kısa Özet</h4>
+                <div class="text-gray-300 detailed-summary">{{ summary.short_summary_text|markdownify|safe }}</div>
+              </div>
+              <div class="bg-gray-800 rounded-lg p-4 border border-neon-primary">
+                <h4 class="text-neon-primary font-semibold mb-2">Detaylı Özet</h4>
+                <div class="text-gray-300 detailed-summary">
+                  {% if summary.detailed_summary_text %}
+                    {{ summary.detailed_summary_text|markdownify|safe }}
+                  {% else %}
+                    <p>Henüz detaylı özet oluşturulmamış.</p>
+                  {% endif %}
+                </div>
+              </div>
+            {% else %}
+              <div class="text-gray-400 text-center py-6">Henüz özet oluşturulmamış.</div>
+            {% endif %}
+          </div>
+        </div>
+        
+        <!-- Flashcard Sekmesi -->
+        <div x-show="tab === 'flashcard'" class="bg-gray-900 rounded-xl p-4 border border-neon-primary mb-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-neon-primary font-bold">Bilgi Kartları</h3>
+          </div>
+          
+          <div class="text-center py-10">
+            <div class="mb-6">
+              <i class="fas fa-clone text-neon-secondary text-5xl mb-4"></i>
+              <h4 class="text-xl text-white mb-2">Bilgi Kartları</h4>
+              <p class="text-gray-400 mb-6">Videodan öğrendiğiniz bilgileri kartlar halinde düzenleyin ve çalışın.</p>
+            </div>
+            
+            <a href="{% url 'flashcards:create_flashcards' video.id %}" class="bg-neon-primary text-black px-6 py-3 rounded-lg hover:shadow-neon-primary transition-all duration-300">
+              <i class="fas fa-external-link-alt mr-2"></i> Bilgi Kartları Sayfasına Git
+            </a>
+          </div>
+        </div>
+        
+        <!-- Quiz Sekmesi -->
+        <div x-show="tab === 'quiz'" class="bg-gray-900 rounded-xl p-4 border border-neon-primary mb-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-neon-primary font-bold">Test</h3>
+          </div>
+          
+          <div class="text-center py-10">
+            <div class="mb-6">
+              <i class="fas fa-question-circle text-neon-secondary text-5xl mb-4"></i>
+              <h4 class="text-xl text-white mb-2">Testler</h4>
+              <p class="text-gray-400 mb-6">Video içeriği hakkında testler oluşturun ve bilgilerinizi ölçün.</p>
+            </div>
+            
+            <a href="{% url 'quizzes:create_quiz' video.id %}" class="bg-neon-primary text-black px-6 py-3 rounded-lg hover:shadow-neon-primary transition-all duration-300">
+              <i class="fas fa-external-link-alt mr-2"></i> Test Sayfasına Git
+            </a>
+          </div>
+        </div>
+        
+        <!-- Sohbet Paneli -->
+        <div class="bg-gray-900 rounded-xl p-4 border border-neon-secondary mb-6">
+          <h3 class="text-neon-secondary font-bold mb-4">Sohbet</h3>
+          <div id="chatBox" class="max-h-[400px] overflow-y-auto mb-4 pr-2 scroll-smooth">
+            {% for msg in chat_messages %}
+              <div class="mb-3 p-3 rounded-lg {% if msg.user == request.user %}bg-neon-primary bg-opacity-20 border border-neon-primary{% else %}bg-gray-800{% endif %}">
+                <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
+                  <span>{{ msg.user.username }}</span>
+                  <span>{{ msg.created_at|date:'H:i' }}</span>
+                </div>
+                <div class="font-medium text-white">{{ msg.prompt_text|markdownify }}</div>
+                <div class="mt-2 text-gray-300">{{ msg.response_text|markdownify }}</div>
+              </div>
+            {% empty %}
+              <div class="text-gray-400 text-center py-6">Henüz sohbet mesajı yok.</div>
+            {% endfor %}
+          </div>
+          <form id="chatForm" class="flex gap-2">
+            {% csrf_token %}
+            <input type="text" name="prompt_text" id="chatInput" placeholder="Bir soru sorun..." class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-primary" required>
+            <input type="hidden" name="timestamp" value="0">
+            <button type="submit" class="bg-neon-secondary text-black px-4 py-2 rounded-lg hover:shadow-neon-secondary transition-all duration-300">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </form>
+        </div>
+        
+        <!-- Not Alma Paneli -->
+        <div class="bg-gray-900 rounded-xl p-4 border border-neon-secondary">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-neon-secondary font-bold">Notlar</h3>
+            <div class="relative" x-data="{ open: false }">
+              <button @click="open = !open" class="bg-neon-secondary text-black px-3 py-1 rounded-lg text-sm hover:shadow-neon-secondary transition-all duration-300">
+                <i class="fas fa-download mr-1"></i> İndir <i class="fas fa-chevron-down ml-1"></i>
+              </button>
+              <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg z-10">
+                <div class="py-1">
+                  <button id="downloadNotesHTML" class="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
+                    <i class="fas fa-file-code mr-2"></i> HTML olarak indir
+                  </button>
+                  <button id="downloadNotesCSV" class="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
+                    <i class="fas fa-file-csv mr-2"></i> CSV olarak indir
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="noteBox" class="max-h-[400px] overflow-y-auto mb-4 pr-2 scroll-smooth">
+            {% for note in notes %}
+              <div class="mb-3 p-3 rounded-lg bg-gray-800 border border-gray-700">
+                <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
+                  <span>{{ note.user.username }}</span>
+                  <span>{{ note.timestamp|floatformat:2 }} sn</span>
+                </div>
+                <div class="text-gray-300">{{ note.note_text|markdownify }}</div>
+              </div>
+            {% empty %}
+              <div class="text-gray-400 text-center py-6">Henüz not eklenmemiş.</div>
+            {% endfor %}
+          </div>
+          <form id="noteForm" class="flex gap-2">
+            {% csrf_token %}
+            <input type="text" name="note_text" id="noteInput" placeholder="Not ekleyin..." class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-secondary" required>
+            <input type="hidden" name="timestamp" id="noteTimestamp" value="0">
+            <button type="submit" class="bg-neon-primary text-black px-4 py-2 rounded-lg hover:shadow-neon-primary transition-all duration-300">
+              <i class="fas fa-plus"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<style>
+  /* Detaylı özet formatlaması */
+  .detailed-summary p {
+    margin-bottom: 1rem;
+  }
+  .detailed-summary ul, .detailed-summary ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+    list-style-position: outside;
+  }
+  .detailed-summary ul {
+    list-style-type: disc;
+  }
+  .detailed-summary ol {
+    list-style-type: decimal;
+  }
+  .detailed-summary li {
+    margin-bottom: 0.5rem;
+    padding-left: 0.5rem;
+  }
+  .detailed-summary h1, .detailed-summary h2, .detailed-summary h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+    color: #ffffff;
+  }
+  .detailed-summary h1 {
+    font-size: 1.5rem;
+  }
+  .detailed-summary h2 {
+    font-size: 1.3rem;
+  }
+  .detailed-summary h3 {
+    font-size: 1.1rem;
+  }
+  .detailed-summary strong, .detailed-summary b {
+    font-weight: bold;
+    color: #ffffff;
+  }
+  .detailed-summary em, .detailed-summary i {
+    font-style: italic;
+  }
+  .detailed-summary code {
+    font-family: monospace;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.2rem;
+  }
+  .detailed-summary blockquote {
+    border-left: 3px solid #9333ea;
+    padding-left: 1rem;
+    margin-left: 0.5rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+  }
+</style>
+<script>
+const video = document.getElementById('videoPlayer');
+const timestampInputs = document.querySelectorAll('input[name="timestamp"]');
+
+// Video oynarken timestamp güncelle
+video.addEventListener('timeupdate', () => {
+  const current = video.currentTime;
+  
+  // Timestamp inputları güncelle
+  timestampInputs.forEach(input => {
+    input.value = current.toFixed(2);
+  });
+});
+
+// Video duraklatıldığında not ekleme kutusuna otomatik odaklan
+video.addEventListener('pause', () => {
+  // Eğer video duraklatıldıysa ve not ekleme kutusu görünüyorsa, otomatik odaklan
+  if (noteInput) {
+    noteInput.focus();
+  }
+});
+
+// Sayfa yüklendiğinde özet kutusunu en alta kaydır
+const summaryBox = document.getElementById('summaryBox');
+
+// Sayfa yüklendiğinde kutuları doğru konuma kaydır
+if (summaryBox) {
+  summaryBox.scrollTop = 0; // Özet için en üstte başlat
+}
+
+// Özet oluşturma formunu dinle ve yükleme göstergesi ekle
+const summaryForm = document.getElementById('summaryForm');
+summaryForm?.addEventListener('submit', function() {
+  const submitButton = summaryForm.querySelector('button[type="submit"]');
+  submitButton.disabled = true;
+  submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Oluşturuluyor...';
+});
+
+// AJAX ile sohbet mesajı gönderme
+const chatForm = document.getElementById('chatForm');
+const chatInput = document.getElementById('chatInput');
+const chatBox = document.getElementById('chatBox');
+
+// Sayfa yüklendiğinde sohbet kutusunu en alta kaydır
+if (chatBox) {
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+chatForm?.addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  // Form gönderildiğinde butonun durumunu güncelle
+  const submitButton = chatForm.querySelector('button[type="submit"]');
+  const originalButtonContent = submitButton.innerHTML;
+  submitButton.disabled = true;
+  submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  
+  const formData = new FormData(chatForm);
+  fetch('{% url "videos:add_chat_message_ajax" video.id %}', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    // İşlem bittikten sonra butonu normal haline getir
+    submitButton.disabled = false;
+    submitButton.innerHTML = originalButtonContent;
+    
+    if (data && data.user) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'mb-3 p-3 rounded-lg bg-neon-primary bg-opacity-20 border border-neon-primary';
+      msgDiv.innerHTML = `
+        <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
+          <span>${data.user}</span>
+          <span>${data.created_at}</span>
+        </div>
+        <div class="font-medium text-white">${data.prompt_text}</div>
+        <div class="mt-2 text-gray-300">${data.response_text}</div>
+      `;
+      chatBox.appendChild(msgDiv);
+      chatInput.value = '';
+      
+      // Rate limit hatası durumunda uyarı göster
+      if (data.error) {
+        showToast('API hizmet sınırı aşıldı. Daha sonra tekrar deneyin.', true);
+      } else {
+        showToast('Mesaj gönderildi!');
+      }
+      
+      // Yeni mesaj geldiğinde otomatik olarak aşağı kaydır
+      scrollToBottom(chatBox);
+    } else {
+      showToast('Mesaj gönderilemedi!', true);
+    }
+  })
+  .catch((error) => {
+    console.error('Hata:', error);
+    submitButton.disabled = false;
+    submitButton.innerHTML = originalButtonContent;
+    showToast('Bir hata oluştu! Bağlantınızı kontrol edin.', true);
+  });
+});
+
+// Kutucuğu en aşağı kaydırma fonksiyonu
+function scrollToBottom(element) {
+  element.scrollTop = element.scrollHeight;
+}
+
+// Bildirimler
+function showToast(msg, isError=false) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'fixed top-4 right-4 z-50 px-4 py-2 rounded font-bold shadow-lg ' + (isError ? 'bg-red-500 text-white' : 'bg-neon-primary text-black');
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 2500);
+}
+
+// Sayfa yüklendiğinde not kutusunu en alta kaydır
+const noteForm = document.getElementById('noteForm');
+const noteInput = document.getElementById('noteInput');
+const noteBox = document.getElementById('noteBox');
+
+// Sayfa yüklendiğinde not kutusunu en alta kaydır
+if (noteBox) {
+  noteBox.scrollTop = noteBox.scrollHeight;
+}
+
+// Notlar için AJAX gönderme
+noteForm?.addEventListener('submit', function(e) {
+  e.preventDefault();
+  const submitButton = noteForm.querySelector('button[type="submit"]');
+  const originalButtonContent = submitButton.innerHTML;
+  submitButton.disabled = true;
+  submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  
+  const formData = new FormData(noteForm);
+  fetch('{% url "videos:add_note_ajax" video.id %}', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    // İşlem bittikten sonra butonu normal haline getir
+    submitButton.disabled = false;
+    submitButton.innerHTML = originalButtonContent;
+    
+    if (data && data.user) {
+      const noteDiv = document.createElement('div');
+      noteDiv.className = 'mb-3 p-3 rounded-lg bg-gray-800 border border-gray-700';
+      noteDiv.innerHTML = `
+        <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
+          <span>${data.user}</span>
+          <span>${data.timestamp} sn</span>
+        </div>
+        <div class="text-gray-300">${data.note_text}</div>
+      `;
+      noteBox.appendChild(noteDiv);
+      noteInput.value = '';
+      showToast('Not eklendi!');
+      
+      // Yeni not eklendiğinde otomatik olarak aşağı kaydır
+      scrollToBottom(noteBox);
+    } else {
+      showToast('Not eklenemedi!', true);
+    }
+  })
+  .catch((error) => {
+    console.error('Hata:', error);
+    submitButton.disabled = false;
+    submitButton.innerHTML = originalButtonContent;
+    showToast('Bir hata oluştu!', true);
+  });
+});
+
+// Notları HTML olarak indirme
+document.getElementById('downloadNotesHTML')?.addEventListener('click', function() {
+  downloadNotes('html');
+});
+
+// Notları CSV olarak indirme
+document.getElementById('downloadNotesCSV')?.addEventListener('click', function() {
+  downloadNotes('csv');
+});
+
+// Notları indirme fonksiyonu
+function downloadNotes(format) {
+  const notesContainer = document.getElementById('noteBox');
+  if (!notesContainer || notesContainer.querySelectorAll('.mb-3').length === 0) {
+    showToast('İndirilecek not bulunamadı!', true);
+    return;
+  }
+  
+  const videoTitle = document.querySelector('h1').textContent.trim();
+  const notes = notesContainer.querySelectorAll('.mb-3');
+  
+  if (format === 'html') {
+    // HTML şablonu oluştur
+    let notesHTML = `
+    <!DOCTYPE html>
+    <html lang="tr">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Notlar: ${videoTitle}</title>
+      <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { color: #333; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        .note { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 15px; background-color: #f9f9f9; }
+        .note-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.8em; color: #666; }
+        .note-content { color: #333; }
+        .timestamp { font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      <h1>Video Notları: ${videoTitle}</h1>
+      <div class="notes-container">
+    `;
+    
+    // Notları topla
+    notes.forEach(note => {
+      const username = note.querySelector('.flex span:first-child').textContent.trim();
+      const timestamp = note.querySelector('.flex span:last-child').textContent.trim();
+      const content = note.querySelector('.text-gray-300').innerHTML;
+      
+      notesHTML += `
+        <div class="note">
+          <div class="note-header">
+            <span>${username}</span>
+            <span class="timestamp">${timestamp}</span>
+          </div>
+          <div class="note-content">${content}</div>
+        </div>
+      `;
+    });
+    
+    notesHTML += `
+      </div>
+    </body>
+    </html>
+    `;
+    
+    // HTML dosyasını indir
+    const blob = new Blob([notesHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${videoTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notlar.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+  } else if (format === 'csv') {
+    // CSV formatı için başlık satırı
+    let csv = 'Kullanıcı,Zaman (sn),Not\n';
+    
+    // Notları CSV formatına dönüştür
+    notes.forEach(note => {
+      const username = note.querySelector('.flex span:first-child').textContent.trim();
+      const timestamp = note.querySelector('.flex span:last-child').textContent.trim().replace(' sn', '');
+      const content = note.querySelector('.text-gray-300').textContent.trim().replace(/"/g, '""'); // CSV için çift tırnak kaçış
+      
+      csv += `"${username}","${timestamp}","${content}"\n`;
+    });
+    
+    // CSV dosyasını indir
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${videoTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notlar.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  
+  showToast(`Notlar ${format.toUpperCase()} formatında indirildi!`);
+}
+</script>
+<div id="toast" class="fixed top-4 right-4 z-50 hidden px-4 py-2 rounded bg-neon-primary text-black font-bold shadow-lg"></div>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Testler{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <h1 class="text-3xl font-bold text-neon-primary">Testler</h1>
+        <a href="{% url 'videos:video_list' %}" class="bg-neon-secondary text-black px-4 py-2 rounded-lg font-bold hover:shadow-neon transition-all duration-300">
+            <i class="fas fa-video mr-1"></i> Videolara Dön
+        </a>
+    </div>
+
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="p-4 mb-4 rounded-lg {% if message.tags == 'success' %}bg-green-900 border border-green-500{% elif message.tags == 'error' %}bg-red-900 border border-red-500{% elif message.tags == 'warning' %}bg-yellow-900 border border-yellow-500{% elif message.tags == 'info' %}bg-blue-900 border border-blue-500{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if unattempted_quizzes %}
+        <div class="mb-10">
+            <h2 class="text-2xl font-bold text-neon-accent mb-4 flex items-center">
+                <i class="fas fa-lightbulb mr-2"></i> Hazır Testler
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for quiz in unattempted_quizzes %}
+                    <div class="bg-gradient-to-br from-gray-900 to-black p-6 rounded-xl border border-neon-accent hover:shadow-neon-accent transition-all duration-300">
+                        <div class="mb-4">
+                            <h3 class="text-xl font-bold text-neon-accent mb-2">{{ quiz.title }}</h3>
+                            <p class="text-gray-400 mb-2">{{ quiz.video.title }}</p>
+                            <div class="flex items-center text-gray-500 text-sm">
+                                <i class="fas fa-question-circle mr-1"></i> 
+                                <span>{{ quiz.question_set.count }} soru</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-4">
+                            <a href="{% url 'quizzes:create_quiz' quiz.video.id %}" class="text-neon-accent hover:text-neon-accent-light transition-colors">
+                                <i class="fas fa-edit mr-1"></i> Düzenle
+                            </a>
+                            <a href="{% url 'videos:video_detail' quiz.video.id %}" class="bg-neon-accent text-black px-4 py-2 rounded-lg font-bold hover:shadow-neon transition-all duration-300">
+                                <i class="fas fa-play mr-1"></i> Testi Başlat
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    {% if user_attempts %}
+        <div class="mb-10">
+            <h2 class="text-2xl font-bold text-neon-secondary mb-4 flex items-center">
+                <i class="fas fa-check-circle mr-2"></i> Tamamlanan Testler
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for attempt in user_attempts %}
+                    <div class="bg-black p-6 rounded-xl border border-neon-secondary hover:shadow-neon-secondary transition-all duration-300">
+                        <div class="mb-4">
+                            <h3 class="text-xl font-bold text-neon-secondary mb-2">{{ attempt.quiz.title }}</h3>
+                            <p class="text-gray-400 mb-2">{{ attempt.quiz.video.title }}</p>
+                            <div class="flex items-center text-gray-500 text-sm">
+                                <i class="fas fa-calendar-alt mr-1"></i> 
+                                <span>{{ attempt.created_at|date:"d.m.Y H:i" }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-4">
+                            <div class="flex items-center">
+                                <span class="text-neon-primary font-bold text-lg">
+                                    <i class="fas fa-trophy mr-1"></i> {{ attempt.score }}%
+                                </span>
+                                {% if attempt.score >= 80 %}
+                                    <span class="ml-2 bg-green-900 text-green-300 text-xs rounded-full px-2 py-1">Başarılı</span>
+                                {% elif attempt.score >= 50 %}
+                                    <span class="ml-2 bg-yellow-900 text-yellow-300 text-xs rounded-full px-2 py-1">Orta</span>
+                                {% else %}
+                                    <span class="ml-2 bg-red-900 text-red-300 text-xs rounded-full px-2 py-1">Geliştirilmeli</span>
+                                {% endif %}
+                            </div>
+                            <a href="{% url 'videos:video_detail' attempt.quiz.video.id %}" class="bg-neon-secondary text-black px-4 py-2 rounded-lg font-bold hover:shadow-neon transition-all duration-300">
+                                <i class="fas fa-redo mr-1"></i> Tekrar Dene
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    {% if not unattempted_quizzes and not user_attempts %}
+        <div class="bg-black p-6 rounded-xl border border-neon-secondary text-center">
+            <div class="text-gray-400 mb-6">
+                <i class="fas fa-info-circle text-4xl mb-4 text-neon-secondary"></i>
+                <p class="text-lg mb-2">Henüz test oluşturmadınız.</p>
+                <p class="text-sm text-gray-500">Videolarınız için testler oluşturarak öğrenmenizi pekiştirebilirsiniz.</p>
+            </div>
+            <a href="{% url 'videos:video_list' %}" class="bg-neon-secondary text-black px-6 py-3 rounded-lg font-bold hover:shadow-neon transition-all duration-300">
+                <i class="fas fa-video mr-1"></i> Videolara Göz At
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

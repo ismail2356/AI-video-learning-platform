@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profil Düzenle - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-gray-900 rounded-lg p-6 shadow-lg border border-purple-500">
+            <h1 class="text-2xl font-bold text-white mb-6">Profil Düzenle</h1>
+            
+            <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Avatar -->
+                <div class="space-y-2">
+                    <label class="block text-gray-400">Profil Fotoğrafı</label>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-20 h-20 rounded-full overflow-hidden bg-purple-600 flex items-center justify-center">
+                            {% if user.profile.avatar %}
+                                <img src="{{ user.profile.avatar.url }}" alt="Avatar" class="w-full h-full object-cover">
+                            {% else %}
+                                <span class="text-2xl text-white">{{ user.username|first|upper }}</span>
+                            {% endif %}
+                        </div>
+                        <input type="file" name="avatar" accept="image/*" 
+                               class="block w-full text-sm text-gray-400
+                                      file:mr-4 file:py-2 file:px-4
+                                      file:rounded-full file:border-0
+                                      file:text-sm file:font-semibold
+                                      file:bg-purple-500 file:text-white
+                                      hover:file:bg-purple-400">
+                    </div>
+                </div>
+
+                <!-- Bio -->
+                <div class="space-y-2">
+                    <label for="bio" class="block text-gray-400">Hakkımda</label>
+                    <textarea name="bio" id="bio" rows="4" 
+                              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                              placeholder="Kendinizden bahsedin...">{{ user.profile.bio }}</textarea>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex justify-end space-x-4">
+                    <a href="{% url 'core:profile' %}" 
+                       class="px-4 py-2 bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-700 transition-colors">
+                        İptal
+                    </a>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors">
+                        Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Giriş Yap{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-[calc(100vh-200px)]">
+    <div class="bg-black p-8 rounded-xl border border-neon-primary shadow-neon max-w-md w-full">
+        <h2 class="text-3xl font-bold text-neon-primary mb-6 text-center">Giriş Yap</h2>
+        
+        {% if form.errors %}
+        <div class="bg-red-900 border border-red-500 text-white p-4 rounded-lg mb-6">
+            <p>Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.</p>
+        </div>
+        {% endif %}
+        
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="id_username" class="block text-neon-secondary mb-2">Kullanıcı Adı</label>
+                <input type="text" name="username" id="id_username" class="w-full bg-neon-bg border border-neon-secondary rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-neon-primary">
+            </div>
+            <div class="mb-6">
+                <label for="id_password" class="block text-neon-secondary mb-2">Şifre</label>
+                <input type="password" name="password" id="id_password" class="w-full bg-neon-bg border border-neon-secondary rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-neon-primary">
+            </div>
+            
+            <input type="hidden" name="next" value="{{ next }}">
+            
+            <div class="flex flex-col space-y-4">
+                <button type="submit" class="bg-neon-primary text-black py-3 px-6 rounded-lg font-bold hover:shadow-neon transition-all duration-300 transform hover:scale-105">Giriş Yap</button>
+                <a href="/" class="text-center text-neon-secondary hover:text-white transition-all duration-300">Ana Sayfaya Dön</a>
+            </div>
+        </form>
+        
+        <div class="mt-8 text-center">
+            <p class="text-gray-400">Hesabınız yok mu?</p>
+            <a href="/accounts/register/" class="text-neon-primary hover:text-white transition-all duration-300">Kayıt Ol</a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

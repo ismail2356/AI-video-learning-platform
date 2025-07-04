@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Kayıt Ol{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-[calc(100vh-200px)]">
+    <div class="bg-black p-8 rounded-xl border border-neon-secondary shadow-neon max-w-md w-full">
+        <h2 class="text-3xl font-bold text-neon-secondary mb-6 text-center">Kayıt Ol</h2>
+        
+        {% if form.errors %}
+        <div class="bg-red-900 border border-red-500 text-white p-4 rounded-lg mb-6">
+            <p>Lütfen aşağıdaki hataları düzeltin:</p>
+            {{ form.errors }}
+        </div>
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="id_username" class="block text-neon-primary mb-2">Kullanıcı Adı</label>
+                <input type="text" name="username" id="id_username" class="w-full bg-neon-bg border border-neon-primary rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-neon-secondary" required>
+                <p class="text-gray-400 text-xs mt-1">Sadece harfler, rakamlar ve @/./+/-/_ karakterleri kullanılabilir.</p>
+            </div>
+            <div class="mb-4">
+                <label for="id_password1" class="block text-neon-primary mb-2">Şifre</label>
+                <input type="password" name="password1" id="id_password1" class="w-full bg-neon-bg border border-neon-primary rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-neon-secondary" required>
+                <ul class="text-gray-400 text-xs mt-1 space-y-1">
+                    <li>Şifreniz diğer kişisel bilgilerinizle çok benzer olmamalıdır.</li>
+                    <li>Şifreniz en az 8 karakter içermelidir.</li>
+                    <li>Şifreniz yaygın olarak kullanılan bir şifre olmamalıdır.</li>
+                    <li>Şifreniz tamamen sayısal olmamalıdır.</li>
+                </ul>
+            </div>
+            <div class="mb-6">
+                <label for="id_password2" class="block text-neon-primary mb-2">Şifre Onayı</label>
+                <input type="password" name="password2" id="id_password2" class="w-full bg-neon-bg border border-neon-primary rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-neon-secondary" required>
+                <p class="text-gray-400 text-xs mt-1">Doğrulama için şifrenizi tekrar girin.</p>
+            </div>
+            
+            <div class="flex flex-col space-y-4">
+                <button type="submit" class="bg-neon-secondary text-black py-3 px-6 rounded-lg font-bold hover:shadow-neon transition-all duration-300 transform hover:scale-105">Kayıt Ol</button>
+                <a href="/accounts/login/" class="text-center text-neon-primary hover:text-white transition-all duration-300">Zaten hesabınız var mı? Giriş yapın</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

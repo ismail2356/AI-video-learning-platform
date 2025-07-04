@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Ana Sayfa{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col">
+    <!-- Hero Section -->
+    <section class="py-16 px-4 flex flex-col items-center justify-center text-center">
+        <h1 class="text-4xl md:text-5xl font-bold text-neon-primary mb-6 animate-pulse-slow">Video Öğrenme Platformu</h1>
+        <p class="text-gray-400 max-w-2xl text-lg">Yapay zeka destekli video öğrenme deneyiminizi güçlendirin. Videolarınızı yükleyin, notlar alın ve öğrenme sürecinizi hızlandırın.</p>
+        <div class="mt-8">
+            <a href="/videos/" class="bg-neon-primary text-black px-6 py-3 rounded-lg font-bold hover:shadow-neon transition-all duration-300 transform hover:scale-105">Hemen Başla</a>
+        </div>
+    </section>
+
+    <!-- Features Section - Slayt Tarzı -->
+    <section class="py-12 px-4">
+        <h2 class="text-3xl font-bold text-neon-secondary text-center mb-12">Özellikler</h2>
+        
+        <!-- Feature 1 -->
+        <div class="flex flex-col md:flex-row items-center mb-24 max-w-6xl mx-auto">
+            <div class="md:w-1/2 mb-8 md:mb-0 md:pr-8">
+                <h3 class="text-2xl font-bold text-neon-primary mb-4">Video Yükleme ve Transkript</h3>
+                <p class="text-gray-400 mb-6">Videolarınızı kolayca yükleyin ve Whisper AI ile otomatik transkriptler oluşturun. Metadata bilgileri otomatik olarak çıkarılır.</p>
+                <ul class="text-gray-400 space-y-2">
+                    <li class="flex items-center"><span class="text-neon-secondary mr-2">✓</span> Çoklu video formatı desteği</li>
+                    <li class="flex items-center"><span class="text-neon-secondary mr-2">✓</span> Otomatik metadata çıkarımı</li>
+                    <li class="flex items-center"><span class="text-neon-secondary mr-2">✓</span> Hızlı transkript oluşturma</li>
+                </ul>
+            </div>
+            <div class="md:w-1/2 bg-black p-6 rounded-xl border border-neon-primary hover:shadow-neon-primary transition-all duration-500">
+                <div class="aspect-video bg-neon-bg flex items-center justify-center">
+                    <span class="text-neon-primary text-6xl">▶</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Feature 2 -->
+        <div class="flex flex-col md:flex-row-reverse items-center mb-24 max-w-6xl mx-auto">
+            <div class="md:w-1/2 mb-8 md:mb-0 md:pl-8">
+                <h3 class="text-2xl font-bold text-neon-secondary mb-4">Not Alma ve Sohbet</h3>
+                <p class="text-gray-400 mb-6">Video izlerken anında notlar alın ve içerik hakkında sorular sorarak öğrenme deneyiminizi geliştirin.</p>
+                <ul class="text-gray-400 space-y-2">
+                    <li class="flex items-center"><span class="text-neon-primary mr-2">✓</span> Zaman damgalı notlar</li>
+                    <li class="flex items-center"><span class="text-neon-primary mr-2">✓</span> AI destekli sohbet</li>
+                    <li class="flex items-center"><span class="text-neon-primary mr-2">✓</span> Gerçek zamanlı kaydetme</li>
+                </ul>
+            </div>
+            <div class="md:w-1/2 bg-black p-6 rounded-xl border border-neon-secondary hover:shadow-neon-secondary transition-all duration-500">
+                <div class="aspect-video bg-neon-bg flex items-center justify-center">
+                    <span class="text-neon-secondary text-6xl">✎</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Feature 3 -->
+        <div class="flex flex-col md:flex-row items-center max-w-6xl mx-auto">
+            <div class="md:w-1/2 mb-8 md:mb-0 md:pr-8">
+                <h3 class="text-2xl font-bold text-neon-primary mb-4">Özet, Flashcard ve Quiz</h3>
+                <p class="text-gray-400 mb-6">AI destekli özetler, flashcardlar ve quizler ile öğrendiğiniz bilgileri pekiştirin.</p>
+                <ul class="text-gray-400 space-y-2">
+                    <li class="flex items-center"><span class="text-neon-secondary mr-2">✓</span> Otomatik içerik özeti</li>
+                    <li class="flex items-center"><span class="text-neon-secondary mr-2">✓</span> Kişiselleştirilmiş flashcardlar</li>
+                    <li class="flex items-center"><span class="text-neon-secondary mr-2">✓</span> İçerik tabanlı quizler</li>
+                </ul>
+            </div>
+            <div class="md:w-1/2 bg-black p-6 rounded-xl border border-neon-primary hover:shadow-neon-primary transition-all duration-500">
+                <div class="aspect-video bg-neon-bg flex items-center justify-center">
+                    <span class="text-neon-primary text-6xl">?</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Call to Action -->
+    <section class="py-16 px-4 text-center bg-black mt-12 animate-glow">
+        <h2 class="text-3xl font-bold text-neon-primary mb-6">Öğrenme Deneyiminizi Dönüştürün</h2>
+        <p class="text-gray-400 max-w-2xl mx-auto mb-8">Video öğrenme platformumuz ile bilgiyi daha etkili şekilde özümseyin ve hatırlayın.</p>
+        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <a href="/videos/" class="bg-neon-primary text-black px-6 py-3 rounded-lg font-bold hover:shadow-neon transition-all duration-300 transform hover:scale-105">Videolar</a>
+            <a href="/profile/" class="border border-neon-secondary text-neon-secondary px-6 py-3 rounded-lg font-bold hover:bg-neon-secondary hover:text-black transition-all duration-300">Profil</a>
+        </div>
+    </section>
+</div>
+
+<!-- JavaScript for Scroll Animation -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const featureSections = document.querySelectorAll('.flex.flex-col.md\\:flex-row, .flex.flex-col.md\\:flex-row-reverse');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        featureSections.forEach(section => {
+            section.classList.add('opacity-0', 'translate-y-10', 'transition-all', 'duration-1000');
+            observer.observe(section);
+        });
+    });
+</script>
+{% endblock %} 

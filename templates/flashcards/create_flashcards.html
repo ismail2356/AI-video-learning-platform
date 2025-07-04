@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% block title %}Bilgi Kartları Oluştur - {{ video.title }}{% endblock %}
+
+{% load markdownify %}
+
+{% block content %}
+<div class="min-h-screen bg-black py-8">
+  <div class="container mx-auto px-4">
+    <!-- Başlık ve Geri Butonu -->
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-3xl font-bold text-neon-primary">Bilgi Kartları</h1>
+        <p class="text-gray-400">{{ video.title }}</p>
+      </div>
+      <a href="{% url 'videos:video_detail' video.id %}" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-700 transition-all">
+        <i class="fas fa-arrow-left mr-2"></i> Videoya Dön
+      </a>
+    </div>
+    
+    <!-- Bilgi Kartları Oluşturma -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Sol: Video ve Transkript -->
+      <div class="lg:col-span-1">
+        <div class="bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-neon-primary hover:shadow-neon-primary transition-all duration-300 mb-6">
+          <div class="aspect-w-16 aspect-h-9">
+            <video id="videoPlayer" src="{{ video.file.url }}" controls class="w-full h-full"></video>
+          </div>
+        </div>
+        
+        <!-- Transkript -->
+        <div class="bg-gray-900 rounded-xl p-4 border border-neon-secondary">
+          <h3 class="text-neon-secondary font-bold mb-2">Transkript</h3>
+          <div class="max-h-[400px] overflow-y-auto pr-2">
+            {% for seg in segments %}
+              <div class="py-2 px-3 rounded mb-2 bg-gray-800 transition-all duration-200">
+                <span class="text-xs text-neon-secondary font-mono">{{ seg.start_time|floatformat:2 }} - {{ seg.end_time|floatformat:2 }}</span>
+                <span class="ml-2 text-gray-300">{{ seg.text }}</span>
+              </div>
+            {% empty %}
+              <div class="text-gray-400 text-center py-8">Transkript henüz oluşturulmadı.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sağ: Bilgi Kartları -->
+      <div class="lg:col-span-2">
+        <!-- Otomatik Oluşturma -->
+        <div class="bg-gray-900 rounded-xl p-6 border border-neon-primary mb-6">
+          <h2 class="text-xl font-bold text-neon-primary mb-4">Otomatik Bilgi Kartları Oluştur</h2>
+          <p class="text-gray-300 mb-4">Video içeriğine göre yapay zeka ile otomatik bilgi kartları oluşturun.</p>
+          
+          <form method="post" class="mb-4">
+            {% csrf_token %}
+            <button type="submit" name="generate_flashcards" class="w-full bg-neon-primary text-black py-3 px-4 rounded-lg hover:shadow-neon-primary transition-all duration-300">
+              <i class="fas fa-magic mr-2"></i> Bilgi Kartları Oluştur
+            </button>
+          </form>
+          
+          <div class="text-sm text-gray-400">
+            <p><i class="fas fa-info-circle mr-1"></i> Bu işlem, mevcut bilgi kartlarını silip yenilerini oluşturacaktır.</p>
+          </div>
+        </div>
+        
+        <!-- Manuel Kart Ekleme -->
+        <div class="bg-gray-900 rounded-xl p-6 border border-neon-secondary mb-6">
+          <h2 class="text-xl font-bold text-neon-secondary mb-4">Yeni Bilgi Kartı Ekle</h2>
+          
+          <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+              <label for="question" class="block text-gray-300 mb-1">Soru</label>
+              <textarea id="question" name="question" rows="3" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-secondary" required></textarea>
+            </div>
+            <div>
+              <label for="answer" class="block text-gray-300 mb-1">Cevap</label>
+              <textarea id="answer" name="answer" rows="3" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-secondary" required></textarea>
+            </div>
+            <div>
+              <button type="submit" name="add_flashcard" class="bg-neon-secondary text-black py-2 px-4 rounded-lg hover:shadow-neon-secondary transition-all duration-300">
+                <i class="fas fa-plus mr-2"></i> Kart Ekle
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Mevcut Kartlar -->
+        <div class="bg-gray-900 rounded-xl p-6 border border-neon-primary">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-neon-primary">Mevcut Bilgi Kartları</h2>
+            <div>
+              <a href="{% url 'flashcards:clean_flashcards' video.id %}" class="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-all mr-2">
+                <i class="fas fa-broom mr-2"></i> Kartları Temizle
+              </a>
+            </div>
+          </div>
+          
+          {% if flashcards %}
+            <div class="space-y-4">
+              {% for card in flashcards %}
+                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 hover:border-neon-primary transition-all">
+                  <div class="flex justify-between items-start mb-2">
+                    <div class="text-neon-primary font-semibold">Soru:</div>
+                    <div class="flex space-x-2">
+                      <a href="{% url 'flashcards:edit_flashcard' card.id %}" class="text-blue-400 hover:text-blue-300">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      <form method="post" action="{% url 'flashcards:delete_flashcard' card.id %}" class="inline" onsubmit="return confirm('Bu kartı silmek istediğinize emin misiniz?');">
+                        {% csrf_token %}
+                        <button type="submit" class="text-red-400 hover:text-red-300">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                  <div class="text-gray-300 mb-3">{{ card.question_text|markdownify }}</div>
+                  <div class="text-neon-secondary font-semibold mb-1">Cevap:</div>
+                  <div class="text-gray-300">{{ card.answer_text|markdownify }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-gray-400 text-center py-8">Henüz bilgi kartı oluşturulmamış.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if messages %}
+<div class="fixed top-4 right-4 z-50">
+  {% for message in messages %}
+    <div class="px-4 py-2 rounded font-bold shadow-lg mb-2 {% if message.tags == 'error' %}bg-red-500 text-white{% else %}bg-neon-primary text-black{% endif %}">
+      {{ message }}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Markdown içeriği için stiller */
+  .text-gray-300 p {
+    margin-bottom: 0.75rem;
+  }
+  
+  .text-gray-300 ul, .text-gray-300 ol {
+    margin-left: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .text-gray-300 li {
+    margin-bottom: 0.25rem;
+  }
+  
+  .text-gray-300 h1, .text-gray-300 h2, .text-gray-300 h3, 
+  .text-gray-300 h4, .text-gray-300 h5, .text-gray-300 h6 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #9333ea; /* neon-secondary renk tonuna yakın */
+  }
+  
+  .text-gray-300 code {
+    background-color: rgba(75, 85, 99, 0.4);
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.25rem;
+    font-family: monospace;
+  }
+  
+  .text-gray-300 pre {
+    background-color: rgba(31, 41, 55, 0.8);
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    overflow-x: auto;
+    margin-bottom: 0.75rem;
+  }
+  
+  .text-gray-300 blockquote {
+    border-left: 3px solid #9333ea;
+    padding-left: 0.75rem;
+    font-style: italic;
+    margin-bottom: 0.75rem;
+  }
+  
+  .text-gray-300 a {
+    color: #9333ea;
+    text-decoration: underline;
+  }
+</style>
+{% endblock %} 

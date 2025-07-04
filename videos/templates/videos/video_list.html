@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Videolarım{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-white">Videolarım</h1>
+        <a href="{% url 'videos:video_upload' %}" 
+           class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors">
+            Video Yükle
+        </a>
+    </div>
+
+    {% if messages %}
+    <div class="mb-8">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-900 text-green-400{% else %}bg-red-900 text-red-400{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for video in videos %}
+        <div class="bg-gray-900 rounded-lg overflow-hidden shadow-lg border border-purple-500">
+            <div class="aspect-w-16 aspect-h-9 bg-gray-800">
+                {% if video.thumbnail %}
+                    <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" class="object-cover w-full h-full">
+                {% else %}
+                    <div class="flex items-center justify-center w-full h-full text-gray-500">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="p-4">
+                <h2 class="text-xl font-bold text-white mb-2">{{ video.title }}</h2>
+                {% if video.description %}
+                    <p class="text-gray-400 text-sm mb-4">{{ video.description|truncatewords:30 }}</p>
+                {% endif %}
+                <div class="flex justify-between items-center text-sm text-gray-400">
+                    <span>{{ video.get_duration_display }}</span>
+                    <span class="px-2 py-1 rounded-full text-xs
+                        {% if video.status == 'ready' %}bg-green-900 text-green-400
+                        {% elif video.status == 'processing' %}bg-yellow-900 text-yellow-400
+                        {% else %}bg-red-900 text-red-400{% endif %}">
+                        {{ video.get_status_display }}
+                    </span>
+                </div>
+                <div class="mt-4 flex space-x-2">
+                    <a href="{% url 'videos:video_detail' video.id %}" 
+                       class="flex-1 px-4 py-2 bg-purple-600 text-white text-center rounded-lg hover:bg-purple-500 transition-colors">
+                        <i class="fas fa-play mr-1"></i> İzle
+                    </a>
+                    <form method="post" action="{% url 'videos:delete_video' video.id %}" class="flex-shrink-0"
+                          onsubmit="return confirm('{{ video.title }} videosunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')">
+                        {% csrf_token %}
+                        <button type="submit" class="w-10 h-10 flex items-center justify-center bg-red-600 text-white rounded-lg hover:bg-red-500 transition-colors">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-12">
+            <p class="text-gray-400 text-lg mb-4">Henüz video yüklenmemiş.</p>
+            <a href="{% url 'videos:video_upload' %}" 
+               class="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors">
+                İlk Videoyu Yükle
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

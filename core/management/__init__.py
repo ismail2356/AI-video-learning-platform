@@ -1,0 +1,1 @@
+# Bu dosya core/management paketini tanımlar 
